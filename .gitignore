@@ -1,0 +1,10 @@
+/.mypy_cache/*
+/build/*
+/utils/__pycache__/*
+.vscode/*
+__pycache__/*
+dist/*
+test/*
+set_git_credentials.bat
+rewrite_git_history.sh
+.idea/*
