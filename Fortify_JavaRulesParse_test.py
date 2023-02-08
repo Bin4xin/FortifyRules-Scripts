@@ -22,7 +22,7 @@ class ExceptionRaise(Exception):
 
 
 def testFilesToParser(fileDir):
-    # TODO: \
+    # TODO: \ DONE
     #  1.1 xml文件存在多个标签包含<VulnCategory>，解析内容存在遗漏；
     #  ruleList = ['DataflowSinkRule', 'CharacterizationRule', 'SemanticRule']
     # [x] 1.2 运行代码时，当下目录会写入相同文件。
@@ -84,30 +84,33 @@ def XmlFilesParseLogic_main(AbsolutelyFilePath, langUpperColumns):
     DOMTree = xml.dom.minidom.parse(AbsolutelyFilePath)
     collection = DOMTree.documentElement
     if "extended_config.xml" in AbsolutelyFilePath:
-        Rules = collection.getElementsByTagName("ConfigurationRule")
+        ruleList = ['ConfigurationRule']
     elif "extended_javascript.xml" in AbsolutelyFilePath \
             or "comm_php.xml" in AbsolutelyFilePath \
             or "comm_cloud.xml" in AbsolutelyFilePath \
             or "core_annotations.xml" in AbsolutelyFilePath:
-        Rules = collection.getElementsByTagName("StructuralRule")
+        ruleList = ['StructuralRule']
         # comm_cloud.xml
         # comm_php.xml
         # extended_content.xml
         # extended_javascript.xml
     elif "extended_content.xml" in AbsolutelyFilePath:
-        Rules = collection.getElementsByTagName("ContentRule")
+        ruleList = ['ContentRule']
     elif "comm_universal.xml" in AbsolutelyFilePath \
             or "core_universal.xml" in AbsolutelyFilePath:
-        Rules = collection.getElementsByTagName("RegexRule")
+        ruleList = ['RegexRule']
         # comm_universal.xml
         # core_universal.xml
     else:
         ruleList = ['DataflowSinkRule', 'CharacterizationRule', 'SemanticRule']
     for rule in ruleList:
-        print(rule)
         Rules = collection.getElementsByTagName(rule)
     # Here is a single label to parser. Could parser files like a para.
     # init_csv(wirter_FilesPath)
+        if len(Rules) > 0:
+            print("{} length ====== {}".format(rule, len(Rules)))
+        else:
+            print("Sorry, rule file {} there is None for {}, Plz Check.".format(AbsolutelyFilePath, Rules))
         for Rule in Rules:
             """
             @:param:
@@ -117,25 +120,24 @@ def XmlFilesParseLogic_main(AbsolutelyFilePath, langUpperColumns):
              - 漏洞ID ruleID = Rule.getElementsByTagName('RuleID')[0]
              - 漏洞描述
             """
-            # VulnCategory = Rule.getElementsByTagName('VulnCategory')[0]
             ruleID = Rule.getElementsByTagName('RuleID')[0].childNodes[0].data
+
+            VulnCategoryTag = Rule.getElementsByTagName('VulnCategory')
+            VulnSubCategoryTag = Rule.getElementsByTagName('VulnSubcategory')
             try:
-                print(ruleID)
-                """
-                if VulnCategory and Rule.getElementsByTagName('VulnSubcategory')[0] != '':
-                    VulnCateForAll = VulnCategory.childNodes[0].data + ": " + \
-                                     Rule.getElementsByTagName('VulnSubcategory')[0].childNodes[0].data
-                    print(langUpperColumns, ruleID.childNodes[0].data, VulnCateForAll)
-                    # writeIntoCSV(wirter_FilesPath, langUpperColumns, ruleID.childNodes[0].data, VulnCateForAll)
-                else:
-                    print("VulnCategory and VulnSubcategory is null!")
-                    continue
-                """
+                if VulnCategoryTag is not None:
+                    VulnCategory = Rule.getElementsByTagName('VulnCategory')[0].childNodes[0].data
+                    try:
+                        if VulnSubCategoryTag is not None:
+                            VulnSubCategory = Rule.getElementsByTagName('VulnSubcategory')[0].childNodes[0].data
+                            VulnCateForAll = VulnCategory + ": " + VulnSubCategory
+                            writeIntoCSV(wirter_FilesPath, langUpperColumns, ruleID, VulnCateForAll)
+                    except:
+                        print("VulnSubcategory is null! Pass.")
+                        pass
+                    writeIntoCSV(wirter_FilesPath, langUpperColumns, ruleID, VulnCategory)
             except:
-                print("unsuccess")
+                print("VulnCategory is null! Pass.")
+                pass
                 # print(langUpperColumns, ruleID.childNodes[0].data, VulnCategory.childNodes[0].data)
                 # writeIntoCSV(wirter_FilesPath, langUpperColumns, ruleID.childNodes[0].data, VulnCategory.childNodes[0].data)
-        if len(Rules) > 0:
-            print("length======", len(Rules))
-        else:
-            print("Sorry, rule file {} there is None for {}, Plz Check.".format(AbsolutelyFilePath, Rules))

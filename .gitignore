@@ -1,3 +1,6 @@
+### my assets
+assets/*
+
 /.mypy_cache/*
 /build/*
 /utils/__pycache__/*
