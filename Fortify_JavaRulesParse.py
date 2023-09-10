@@ -22,9 +22,12 @@ class ExceptionRaise(Exception):
 
 
 def testFilesToParser(fileDir):
-    # TODO: \
-    #  1.1 xml文件存在多个标签包含<VulnCategory>，解析内容存在遗漏；
-    # [x] 1.2 运行代码时，当下目录会写入相同文件。
+    """
+    TODONE
+     1.1 xml文件存在多个标签包含<VulnCategory>，解析内容存在遗漏；
+     ruleList = ['DataflowSinkRule', 'CharacterizationRule', 'SemanticRule']
+    [x] 1.2 运行代码时，当下目录会写入相同文件。
+    """
     ignoreList = [
         # filename
         ".DS_Store",
@@ -37,23 +40,15 @@ def testFilesToParser(fileDir):
             raise ExceptionRaise("ERROR: Plz type in a file extend with XML not like {}.".format(filename))
             pass
         else:
-            # extended_java_xml.csv
             rule = r'_(.*?)\.'
             langList = re.findall(rule, filename)
-            # for lang in langList:
-            #     print(lang.upper())
             langUpperColumns = [lang.upper() for lang in langList].pop()
             XmlFilesParseLogic_main(fileDir + filename, langUpperColumns)
-            # import insert_csv_data
-            # init_csv(targetFileFullName, "Lang")
-            # insert_csv_data.insertData(targetFileFullName, lang.upper())
 
 
 def init_csv(csvName):
     with open(csvName, "w", encoding="utf-8", newline="") as file:
-        # Write/New a csv File
         head = ["Lang", "rule ID", "Vulnerable Category"]
-        # head = ["语言", "规则ID", "漏洞类型"]
         f = csv.writer(file)
         f.writerow(head)
         # TODO: Looks like xml file's available parameter more than 2 rows \
@@ -69,9 +64,7 @@ def writeIntoCSV(wirter_FilesPath, langUpperColumns, ruleID, VulnCateForAll):
 
 
 def XmlFilesParseLogic_main(AbsolutelyFilePath, langUpperColumns):
-    # print(AbsolutelyFilePath, langUpperColumns)
     targetFile = os.path.split(AbsolutelyFilePath)[1]
-    # extended_java.xml
     extendWithFullName = targetFile.replace(".xml", "_xml") + ".csv"
     wirter_FilesPath = targetDir + extendWithFullName
     print("{}[:::]{}".format(AbsolutelyFilePath, wirter_FilesPath))
@@ -83,49 +76,52 @@ def XmlFilesParseLogic_main(AbsolutelyFilePath, langUpperColumns):
     DOMTree = xml.dom.minidom.parse(AbsolutelyFilePath)
     collection = DOMTree.documentElement
     if "extended_config.xml" in AbsolutelyFilePath:
-        Rules = collection.getElementsByTagName("ConfigurationRule")
+        ruleList = ['ConfigurationRule']
     elif "extended_javascript.xml" in AbsolutelyFilePath \
             or "comm_php.xml" in AbsolutelyFilePath \
             or "comm_cloud.xml" in AbsolutelyFilePath \
             or "core_annotations.xml" in AbsolutelyFilePath:
-        Rules = collection.getElementsByTagName("StructuralRule")
-        # comm_cloud.xml
-        # comm_php.xml
-        # extended_content.xml
-        # extended_javascript.xml
+        ruleList = ['StructuralRule']
     elif "extended_content.xml" in AbsolutelyFilePath:
-        Rules = collection.getElementsByTagName("ContentRule")
+        ruleList = ['ContentRule']
     elif "comm_universal.xml" in AbsolutelyFilePath \
             or "core_universal.xml" in AbsolutelyFilePath:
-        Rules = collection.getElementsByTagName("RegexRule")
-        # comm_universal.xml
-        # core_universal.xml
+        ruleList = ['RegexRule']
     else:
-        Rules = collection.getElementsByTagName("DataflowSinkRule")
+        ruleList = ['DataflowSinkRule', 'CharacterizationRule', 'SemanticRule']
+    for rule in ruleList:
+        Rules = collection.getElementsByTagName(rule)
     # Here is a single label to parser. Could parser files like a para.
-    if len(Rules) > 0:
-        print(len(Rules))
-    else:
-        print("Sorry, rule file {} there is None for {}, Plz Check.".format(AbsolutelyFilePath, Rules))
+    # init_csv(wirter_FilesPath)
+        if len(Rules) > 0:
+            print("{} length ====== {}".format(rule, len(Rules)))
+        else:
+            print("Sorry, rule file {} there is None for {}, Plz Check.".format(AbsolutelyFilePath, Rules))
+        for Rule in Rules:
+            """
+            @:param:
+             - 漏洞名称 VulnCateForAll = VulnCategory.childNodes[0].data + /
+                        Rule.getElementsByTagName('VulnSubcategory')[0].childNodes[0].data
+                <VulnCategory 标签解析，位于DataflowSinkRule/RegexRule/etc..父标签下；>
+             - 漏洞ID ruleID = Rule.getElementsByTagName('RuleID')[0]
+             - 漏洞描述
+            """
+            ruleID = Rule.getElementsByTagName('RuleID')[0].childNodes[0].data
 
-    init_csv(wirter_FilesPath)
-    for Rule in Rules:
-        """
-        @:param:
-         - 漏洞名称 VulnCateForAll = VulnCategory.childNodes[0].data + /
-                    Rule.getElementsByTagName('VulnSubcategory')[0].childNodes[0].data
-            <VulnCategory 标签解析，位于DataflowSinkRule/RegexRule/etc..父标签下；>
-         - 漏洞ID ruleID = Rule.getElementsByTagName('RuleID')[0]
-         - 漏洞描述
-        """
-        VulnCategory = Rule.getElementsByTagName('VulnCategory')[0]
-        ruleID = Rule.getElementsByTagName('RuleID')[0]
-        try:
-            if VulnCategory and Rule.getElementsByTagName('VulnSubcategory')[0]:
-                VulnCateForAll = VulnCategory.childNodes[0].data + ": " + \
-                                 Rule.getElementsByTagName('VulnSubcategory')[0].childNodes[0].data
-                print(langUpperColumns, ruleID.childNodes[0].data, VulnCateForAll)
-                writeIntoCSV(wirter_FilesPath, langUpperColumns, ruleID.childNodes[0].data, VulnCateForAll)
-        except:
-            print(langUpperColumns, ruleID.childNodes[0].data, VulnCategory.childNodes[0].data)
-            writeIntoCSV(wirter_FilesPath, langUpperColumns, ruleID.childNodes[0].data, VulnCategory.childNodes[0].data)
+            VulnCategoryTag = Rule.getElementsByTagName('VulnCategory')
+            VulnSubCategoryTag = Rule.getElementsByTagName('VulnSubcategory')
+            try:
+                if VulnCategoryTag is not None:
+                    VulnCategory = Rule.getElementsByTagName('VulnCategory')[0].childNodes[0].data
+                    try:
+                        if VulnSubCategoryTag is not None:
+                            VulnSubCategory = Rule.getElementsByTagName('VulnSubcategory')[0].childNodes[0].data
+                            VulnCateForAll = VulnCategory + ": " + VulnSubCategory
+                            writeIntoCSV(wirter_FilesPath, langUpperColumns, ruleID, VulnCateForAll)
+                    except:
+                        print("VulnSubcategory is null! Pass.")
+                        pass
+                    writeIntoCSV(wirter_FilesPath, langUpperColumns, ruleID, VulnCategory)
+            except:
+                print("VulnCategory is null! Pass.")
+                pass
